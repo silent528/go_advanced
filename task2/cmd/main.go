@@ -9,7 +9,7 @@ import (
 func main() {
 	mux1 := http.NewServeMux()
 	mux1.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		fmt.Println("hello word111")
+		fmt.Println("hello word")
 	})
 
 	s1 := NewServer(":10010", mux1)
