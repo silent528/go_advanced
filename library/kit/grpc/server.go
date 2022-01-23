@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"go_advanced/library/kit/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -23,11 +24,18 @@ func Address(addr string) ServerOption {
 	}
 }
 
+func Middleware(m ...middleware.Middleware) ServerOption {
+	return func(s *Server) {
+		s.middleware = m
+	}
+}
+
 type Server struct {
 	*grpc.Server
-	health  *health.Server
-	network string
-	address string
+	health     *health.Server
+	network    string
+	address    string
+	middleware []middleware.Middleware
 }
 
 func (s *Server) Start(ctx context.Context) error {
@@ -55,7 +63,27 @@ func NewServer(opts ...ServerOption) *Server {
 	for _, o := range opts {
 		o(srv)
 	}
-	srv.Server = grpc.NewServer()
+	interceptor := []grpc.UnaryServerInterceptor{
+		srv.unaryServerInterceptor(),
+	}
+	grpcOptions := []grpc.ServerOption{
+		grpc.ChainUnaryInterceptor(interceptor...),
+	}
+	srv.Server = grpc.NewServer(grpcOptions...)
 	grpc_health_v1.RegisterHealthServer(srv.Server, srv.health)
 	return srv
+}
+
+// 中间件
+func (s *Server) unaryServerInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		h := func(ctx context.Context, req interface{}) (interface{}, error) {
+			return handler(ctx, req)
+		}
+		if len(s.middleware) > 0 {
+			h = middleware.Chain(s.middleware...)(h)
+		}
+		reply, err := h(ctx, req)
+		return reply, err
+	}
 }

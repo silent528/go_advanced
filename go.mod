@@ -8,6 +8,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/wire v0.5.0
+	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.6.0
 	github.com/hhxsv5/go-redis-memory-analysis v2.0.6+incompatible
 	github.com/pkg/errors v0.9.1
